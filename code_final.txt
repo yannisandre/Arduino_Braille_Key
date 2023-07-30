@@ -1,0 +1,143 @@
+#include <DFPlayer_Mini_Mp3.h>  // bibliothèque permettant le contrôle du DFPlayer (module mp3)
+#include <Servo.h>  // bibliothèque permettant de contrôler les servomoteurs
+#include <SoftwareSerial.h> // bibliothèque permettant de contrôler le module mp3
+
+SoftwareSerial mySerial(3, 4); // on crée la transmissions de données série avec le dfplayer dont les bornes RX et TX sont branchées respectivement sur ports digitaux 3 et 4
+
+Servo ServoM1; // on instancie les 6 servomoteurs 
+Servo ServoM2;
+Servo ServoM3;
+Servo ServoM4;
+Servo ServoM5;
+Servo ServoM6;
+
+unsigned long timer; // on instancie la mesure du temps
+
+// liste des combinaisons de lettres et chiffres en braille "a,b,c,d,e,...,z" (liste des servomoteurs à activer)
+int liste_combinaisons_servomoteurs[36][6] = { {1,0,0,0,0,0}, {1,0,1,0,0,0}, {1,1,0,0,0,0}, {1,1,0,1,0,0}, {1,0,0,1,0,0}, {1,1,1,0,0,0}, {1,1,1,1,0,0}, {1,0,1,1,0,0}, {0,1,1,0,0,0}, {0,1,1,1,0,0}, {1,0,0,0,1,0}, {1,0,1,0,1,0}, {1,1,0,0,1,0}, {1,1,0,1,1,0}, {1,0,0,1,1,0}, {1,1,1,0,1,0}, {1,1,1,1,1,0}, {1,0,1,1,1,0}, {0,1,1,0,1,0}, {0,1,1,1,1,0}, {1,0,0,0,1,1}, {1,0,1,0,1,1}, {0,1,1,1,0,1}, {1,1,0,0,1,1}, {1,1,0,1,1,1}, {1,0,0,1,1,1}, {0,1,1,1,0,0}, {1,0,0,0,0,0}, {1,0,1,0,0,0}, {1,1,0,0,0,0}, {1,1,0,1,0,0}, {1,0,0,1,0,0}, {1,1,1,0,0,0}, {1,1,1,1,0,0}, {1,0,1,1,0,0}, {0,1,1,0,0,0} };
+int lettre_aleatoire; // ces deux variables permettront d'assurer la génération d'un nouveau caractère aléatoire différent du précédent
+int test_aleatoire;
+
+void setup() 
+// fonction setup lancée au début de programme permettant d'énoncer le principe de l'objet à l'utilisateur ainsi que de choisir une première lettre à apprendre
+{
+
+  mySerial.begin(9600); // on lance la connection série
+  mp3_set_serial(mySerial); // on l'affecte au module mp3
+  mp3_set_volume(30); // on met le volume du haut parleur au maximum sur une échelle de 0 à 30
+  mp3_play(38);
+  attendre(18000);
+  reset_lettre(); // on fait redescendre tous les batonnets en réinitialisant la postion des servomoteurs afin d'effacer la lettre précédente
+  pinMode (5, INPUT); // on définit le capteur d'intensité sonore branché au pin digital 5 de la carte arduino comme entrée afin de pouvoir récolter ses données
+  randomSeed(analogRead(2)); // on crée la graine aléatoire qui permettra d'avoir par la suite une génération de chiffre pseudo-aléatoires
+  lettre_aleatoire = random(0,25); // on choisit une lettre aléatoirement parmis les 26 de l'alphabet
+  mp3_play(lettre_aleatoire+1); // on joue un fichier mp3 aléatoire parmis les 26 présents sur le df player
+  attendre(3000); // on attend 3000 millisecondes (3 secondes) après l'énonciation de la lettre
+  timer = millis(); // on initialise le timer 
+  former_nouvelle_lettre(); // on forme la première lettre
+
+}
+
+
+void reset_lettre()
+// cette fonction permet d'effacer la lettre existante en abaissant tous les servomoteurs auxquels sont accrochés les six servomoteurs
+{
+
+  mp3_play(37); // on joue le fichier 27 stocké dans la carte micro sd du module haut-parleur, il permet d'énoncer le fait que l'on va changer de lettre
+  attendre(3000); // on attend 3 secondes le temps que le fichier précédent ait été joué entièrement
+  // les instructions suivantes permettent d'établir la connexion entre les servomoteurs et les pins digitaux auxquels ils sont reliés et d'ainsi remettre leur degré d'inclinaison à 0 degrés
+  ServoM1.attach(8);
+  ServoM1.write(0);
+  attendre(200);
+  ServoM2.attach(9);
+  ServoM2.write(0);
+  attendre(200);
+  ServoM3.attach(10);
+  ServoM3.write(0);
+  attendre(200);
+  ServoM4.attach(11);
+  ServoM4.write(0);
+  attendre(200);
+  ServoM5.attach(12);
+  ServoM5.write(0);
+  attendre(200);
+  ServoM6.attach(13);
+  ServoM6.write(0);
+  attendre(200);
+
+  // une fois ceci fait, afin de consommer moins de courant on dettache les servomoteurs de leurs pins respectifs
+
+  ServoM1.detach();
+  ServoM2.detach();
+  ServoM3.detach();
+  ServoM4.detach();
+  ServoM5.detach();
+  ServoM6.detach();
+  
+}
+
+void former_nouvelle_lettre()
+// cette fonction permet de former une nouvelle à partir d'un indice tiré au hasard entre 1 et 26 (les 36 lettres de l'alphabet)
+{
+
+  for (int i = 0; i < 6; i++)
+  {
+    if (liste_combinaisons_servomoteurs[lettre_aleatoire][i] == 1) // si la valeur d'incide i est égal à 1 (le ième batonnet fait parti de la lettre)
+    {
+      if (i == 0) { ServoM1.attach(8); attendre(200);  ServoM1.write(180); }
+      if (i == 1) { ServoM2.attach(9); attendre(200);  ServoM2.write(180); }
+      if (i == 2) { ServoM3.attach(10); attendre(200);  ServoM3.write(180); }
+      if (i == 3) { ServoM4.attach(11); attendre(200);  ServoM4.write(180); }
+      if (i == 4) { ServoM5.attach(12); attendre(200);  ServoM5.write(180); }
+      if (i == 5) { ServoM6.attach(13); attendre(200);  ServoM6.write(180); }  // on active le i-ième servomoteur pour lever le ième batonnet nécessaire à la formation de la lettre
+    }
+  }
+
+}
+
+
+void attendre(int temps)
+// cette fonction permet d'instaurer un temps d'attente au sein du jeu
+{
+
+  unsigned long timer_temp = millis();
+  while (millis() - timer_temp < temps) // temps que la différence entre le temps actuel du programme et le temps mesuré par timer_temp est inférieur au temps d'attente souihaité
+  {
+    // on reste dans la boucle ce qui équivaut à ne rien faire (attendre)
+    continue;
+  }
+
+}
+
+void changer_lettre() 
+// cette fonction permet de changer la lettre affichée au bout de 45 secondes ou bien lorsque l'utilisateur appuie sur le capteur de pression après 9 secondes d'affichage de la précédente
+{
+
+  reset_lettre(); // on réinitialise la lettre
+  test_aleatoire = random(0,35); // on tire au sort la lettre à afficher
+  while (test_aleatoire == lettre_aleatoire) // tant que la nouvelle lettre tirée est la même que la précédente
+  {
+      test_aleatoire = random(0,35);  // on retire au sort cette dernière  
+  }
+  lettre_aleatoire = test_aleatoire; // on choisit une lettre aléatoirement parmis les 26 de l'alphabet
+  mp3_play(lettre_aleatoire+1); // on joue le son correspondant à la lettre
+  attendre(3000); // on attend 3 secondes
+  former_nouvelle_lettre(); // on forme la nouvelle lettre tiré au sort
+  
+}
+
+
+void loop() 
+// cette fonction tourne en boucle et permet de changer de lettre lorsque certaine conditions sont réunies
+{
+
+    if (millis() - timer > 9000 && (analogRead(A1) >= 900 || millis() - timer > 45000))
+    // si cela fait plus de 9 secondes que la lettre est affichée et que l'utilisateur applique une force suffisante
+    // ou bien si cela fait plus de 45 secondes que la lettre est affichée
+    {
+      // on réinitialise le timer et on changer de lettre
+      timer = millis();
+      changer_lettre();
+    }
+
+}

@@ -1,0 +1,55 @@
+#include <Servo.h>  // bibliothèque permettant de contrôler les servomoteurs
+
+
+
+Servo ServoM1; // on instancie les 6 servomoteurs 
+Servo ServoM2;
+Servo ServoM3;
+Servo ServoM4;
+Servo ServoM5;
+Servo ServoM6;
+
+
+
+void setup() {
+
+  ServoM1.attach(8);
+  ServoM1.write(0);
+  attendre(200);
+  ServoM2.attach(9);
+  ServoM2.write(0);
+  attendre(200);
+  ServoM3.attach(10);
+  ServoM3.write(0);
+  attendre(200);
+  ServoM4.attach(11);
+  ServoM4.write(0);
+  attendre(200);
+  ServoM5.attach(12);
+  ServoM5.write(0);
+  attendre(200);
+  ServoM6.attach(13);
+  ServoM6.write(0);
+  attendre(200);
+
+
+}
+
+
+void attendre(int temps)
+// cette fonction permet d'instaurer un temps d'attente au sein du jeu
+{
+
+  unsigned long timer_temp = millis();
+  while (millis() - timer_temp < 1000) // temps que la différence entre le temps actuel du programme et le temps mesuré par timer_temp est inférieur au temps d'attente souihaité
+  {
+    // on reste dans la boucle ce qui équivaut à ne rien faire (attendre)
+    continue;
+  }
+
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+
+}
